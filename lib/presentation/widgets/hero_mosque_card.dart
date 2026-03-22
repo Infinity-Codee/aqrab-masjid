@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/services/ad_service.dart';
 import '../../core/services/map_service.dart';
 import '../../core/utils/walking_time.dart';
 import '../../data/models/mosque_model.dart';
@@ -59,18 +60,22 @@ class _HeroMosqueCardState extends State<HeroMosqueCard>
   }
 
   Future<void> _openDirections() async {
-    try {
-      await MapService.openDirections(
-        mosque: widget.mosque,
-        originLat: widget.userLat,
-        originLng: widget.userLng,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
-    }
+    await AdService.instance.showInterstitialAd(
+      onAdComplete: () {
+        MapService.openDirections(
+          mosque: widget.mosque,
+          originLat: widget.userLat,
+          originLng: widget.userLng,
+        ).catchError((error) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.toString().replaceFirst('Exception: ', '')),
+            ),
+          );
+        });
+      },
+    );
   }
 
   void _showDetails() {
@@ -109,10 +114,7 @@ class _HeroMosqueCardState extends State<HeroMosqueCard>
                   ),
                 ),
                 const SizedBox(height: 12),
-                _detailRow(
-                  Icons.location_on_outlined,
-                  widget.mosque.address,
-                ),
+                _detailRow(Icons.location_on_outlined, widget.mosque.address),
                 const SizedBox(height: 8),
                 _detailRow(
                   Icons.straighten_rounded,
@@ -203,10 +205,7 @@ class _HeroMosqueCardState extends State<HeroMosqueCard>
         // Address (subtle)
         Text(
           widget.mosque.address,
-          style: GoogleFonts.cairo(
-            fontSize: 13,
-            color: Colors.grey[500],
-          ),
+          style: GoogleFonts.cairo(fontSize: 13, color: Colors.grey[500]),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -217,8 +216,7 @@ class _HeroMosqueCardState extends State<HeroMosqueCard>
           animation: _counterAnim,
           builder: (context, _) {
             final animDistance = widget.distanceKm * _counterAnim.value;
-            final animDistanceText =
-                WalkingTime.distanceDisplay(animDistance);
+            final animDistanceText = WalkingTime.distanceDisplay(animDistance);
 
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -1,6 +1,5 @@
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../data/models/mosque_model.dart';
+import 'platform_url_launcher.dart';
 
 class MapService {
   static Future<void> openDirections({
@@ -19,7 +18,7 @@ class MapService {
     }
 
     final uri = Uri.https('www.google.com', '/maps/dir/', query);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (!await PlatformUrlLauncher.openExternalUrl(uri)) {
       throw Exception('تعذر فتح الاتجاهات في الخرائط.');
     }
   }
@@ -30,7 +29,7 @@ class MapService {
       'query': '${mosque.latitude},${mosque.longitude}',
     });
 
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (!await PlatformUrlLauncher.openExternalUrl(uri)) {
       throw Exception('تعذر فتح موقع الجامع على الخريطة.');
     }
   }

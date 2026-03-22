@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/services/ad_service.dart';
 import '../controllers/mosque_controller.dart';
 import '../widgets/hero_mosque_card.dart';
 import '../widgets/map_preview_widget.dart';
@@ -22,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen>
   late final AnimationController _sheetCtrl;
   late final Animation<Offset> _sheetSlide;
   late final Animation<double> _sheetFade;
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
 
   @override
   void initState() {
@@ -39,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen>
     _sheetFade = CurvedAnimation(parent: _sheetCtrl, curve: Curves.easeIn);
 
     _controller.addListener(_onControllerChanged);
+    AdService.instance.loadInterstitialAd();
+    _loadBannerAd();
   }
 
   void _onControllerChanged() {
@@ -50,9 +56,36 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _controller.removeListener(_onControllerChanged);
+    _bannerAd?.dispose();
     _controller.dispose();
     _sheetCtrl.dispose();
     super.dispose();
+  }
+
+  void _loadBannerAd() {
+    if (!AdService.instance.isSupportedPlatform) {
+      return;
+    }
+
+    _bannerAd = AdService.instance.createBannerAd(
+      onLoaded: () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isBannerAdReady = true;
+        });
+      },
+      onFailed: (error) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isBannerAdReady = false;
+          _bannerAd = null;
+        });
+      },
+    )..load();
   }
 
   @override
@@ -224,6 +257,19 @@ class _HomeScreenState extends State<HomeScreen>
           );
         },
       ),
+      bottomNavigationBar: _isBannerAdReady && _bannerAd != null
+          ? SafeArea(
+              child: SizedBox(
+                height: _bannerAd!.size.height.toDouble(),
+                child: Center(
+                  child: SizedBox(
+                    width: _bannerAd!.size.width.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -286,10 +332,9 @@ class _ConnectionBadge extends StatelessWidget {
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color:
-                      isOnline
-                          ? AppConstants.onlineGreen
-                          : AppConstants.offlineOrange,
+                  color: isOnline
+                      ? AppConstants.onlineGreen
+                      : AppConstants.offlineOrange,
                 ),
               ),
               const SizedBox(width: 6),
@@ -411,10 +456,7 @@ class _LoadingView extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'قد يستغرق الأمر حتى ٣٠ ثانية',
-              style: GoogleFonts.cairo(
-                fontSize: 13,
-                color: Colors.grey[500],
-              ),
+              style: GoogleFonts.cairo(fontSize: 13, color: Colors.grey[500]),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -477,10 +519,7 @@ class _ErrorView extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.cairo(
-                  fontSize: 15,
-                  color: Colors.grey[700],
-                ),
+                style: GoogleFonts.cairo(fontSize: 15, color: Colors.grey[700]),
               ),
               const SizedBox(height: 20),
               FilledButton.icon(

@@ -49,5 +49,7 @@
 	<string>نحتاج إلى موقعك الحالي لعرض أقرب جامع لك.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>نحتاج إلى موقعك لعرض أقرب جامع لك حتى أثناء استخدام تطبيقات أخرى.</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 </dict>
 </plist>

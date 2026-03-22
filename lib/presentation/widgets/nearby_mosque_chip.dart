@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/services/ad_service.dart';
 import '../../core/services/map_service.dart';
 import '../../core/utils/walking_time.dart';
 import '../controllers/mosque_controller.dart';
@@ -28,20 +29,24 @@ class NearbyMosqueChip extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        try {
-          await MapService.openDirections(
-            mosque: mosque,
-            originLat: userLat,
-            originLng: userLng,
-          );
-        } catch (e) {
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString().replaceFirst('Exception: ', '')),
-            ),
-          );
-        }
+        await AdService.instance.showInterstitialAd(
+          onAdComplete: () {
+            MapService.openDirections(
+              mosque: mosque,
+              originLat: userLat,
+              originLng: userLng,
+            ).catchError((error) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    error.toString().replaceFirst('Exception: ', ''),
+                  ),
+                ),
+              );
+            });
+          },
+        );
       },
       child: Container(
         width: 160,
